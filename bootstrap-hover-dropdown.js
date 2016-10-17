@@ -24,6 +24,7 @@
         // the element we really care about
         // is the dropdown-toggle's parent
         $allDropdowns = $allDropdowns.add(this.parent());
+        $.hoverDropdown.$allDropdowns = $allDropdowns;
 
         return this.each(function () {
             var $this = $(this),
