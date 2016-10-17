@@ -2,7 +2,7 @@
  * @preserve
  * Project: Bootstrap Hover Dropdown
  * Author: Cameron Spear
- * Version: v2.0.11
+ * Version: v2.2.1
  * Contributors: Mattia Larentis
  * Dependencies: Bootstrap's Dropdown plugin, jQuery
  * Description: A simple plugin to enable Bootstrap dropdowns to active on hover and provide a nice user experience.
@@ -30,10 +30,12 @@
                 $parent = $this.parent(),
                 defaults = {
                     delay: 500,
+                    hoverDelay: 0,
                     instantlyCloseOthers: true
                 },
                 data = {
                     delay: $(this).data('delay'),
+                    hoverDelay: $(this).data('hover-delay'),
                     instantlyCloseOthers: $(this).data('close-others')
                 },
                 showEvent   = 'show.bs.dropdown',
@@ -41,7 +43,7 @@
                 // shownEvent  = 'shown.bs.dropdown',
                 // hiddenEvent = 'hidden.bs.dropdown',
                 settings = $.extend(true, {}, defaults, options, data),
-                timeout;
+                timeout, timeoutHover;
 
             $parent.hover(function (event) {
                 window.clearTimeout(timeout);
@@ -55,7 +57,10 @@
 
                 openDropdown(event);
             }, function () {
+                // clear timer for hover event
+                window.clearTimeout(timeoutHover)
                 timeout = window.setTimeout(function () {
+                    $this.attr('aria-expanded', 'false');
                     $parent.removeClass('open');
                     $this.trigger(hideEvent);
                 }, settings.delay);
@@ -94,13 +99,30 @@
             });
 
             function openDropdown(event) {
-                $allDropdowns.find(':focus').blur();
+                if($this.parents(".navbar").find(".navbar-toggle").is(":visible")) {
+                    // If we're inside a navbar, don't do anything when the
+                    // navbar is collapsed, as it makes the navbar pretty unusable.
+                    return;
+                }
 
-                if(settings.instantlyCloseOthers === true)
-                    $allDropdowns.removeClass('open');
+                // clear dropdown timeout here so it doesnt close before it should
+                window.clearTimeout(timeout);
+                // restart hover timer
+                window.clearTimeout(timeoutHover);
 
-                $parent.addClass('open');
-                $this.trigger(showEvent);
+                // delay for hover event.
+                timeoutHover = window.setTimeout(function () {
+                    $allDropdowns.find(':focus').blur();
+
+                    if(settings.instantlyCloseOthers === true)
+                        $allDropdowns.removeClass('open');
+
+                    // clear timer for hover event
+                    window.clearTimeout(timeoutHover);
+                    $this.attr('aria-expanded', 'true');
+                    $parent.addClass('open');
+                    $this.trigger(showEvent);
+                }, settings.hoverDelay);
             }
         });
     };
@@ -109,4 +131,4 @@
         // apply dropdownHover to all elements with the data-hover="dropdown" attribute
         $('[data-hover="dropdown"]').dropdownHover();
     });
-})(jQuery, this);
+})(jQuery, window);
